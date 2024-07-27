@@ -9,7 +9,7 @@ llama-2-7b-hf: /data/model/Llama-2-7b-hf
 dolly:
   - /data/PromptPG-main/data/dolly-all.json （全量数据）
 alpaca：
-    - /data/PromptPG-main/data/alpaca-all.json（全量数据）
+  - /data/PromptPG-main/data/alpaca-all.json（全量数据）
 
 
 ### 模型训练
@@ -41,7 +41,6 @@ python learn_policy.py \
 1. 开启tmux窗口，tmux a -t clash
 2. 执行命令：CUDA_VISIBLE_DEVICES=0  python -m vllm.entrypoints.openai.api_server --model /data/model/Llama-2-7b-hf --gpu-memory-utilization 0.7  --port 9201 --served-model-name llama
 ```
-完成训练或推理任务后，在tmux窗口中按control+c 停止服务，避免占用显卡资源
 
 
 ## 模型推理
