@@ -19,6 +19,9 @@ from utilities import extract_prediction, normalize_answer
 
 from new_model import PolicyNet,Data
 import networkx as nx
+from topological_sort import return_order_prob
+from collections import defaultdict
+
 
 sys.path.append("../")
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -253,6 +256,26 @@ def policy_gradient_train(policy_model, problems, train_pids, cand_pids, cand_ex
     torch.save(policy_model.linear.state_dict(), ckpt_file)
 
 
+def sample_policy(num_can,select_score,sample_round = 1000):
+    rlt_sample = defaultdict(int)
+    for _ in range(sample_round):
+        selected = []
+        sample_r = [np.random.rand(1) for _ in range(num_can)]
+        for i in range(num_can):
+            if sample_r[i].data < select_score[i].detach().numpy():
+                selected.append(i)
+        rlt_sample[tuple(selected)] += 1
+    max = 0
+    rlt = []
+    for k,v in rlt_sample.items():
+        if v > max:
+            if k != ():
+                rlt = list(k)
+    if rlt == []:
+        rlt = [int(torch.argmax(select_score))]
+    return rlt
+
+
 def get_log_prob(rlt):
     log_prob = 0
     link_pred, edge_index, select_score, edge_index_dict = rlt
@@ -260,13 +283,16 @@ def get_log_prob(rlt):
     num_can = select_score.shape[0]
     c_t_c = edge_index_dict[("can","to","can")]
     num_edge = c_t_c[0].shape[0]
-    sample_r = [np.random.rand(1) for _ in range(num_can)]
-    selected = []
-    for i in range(num_can):
-        if sample_r[i].data < select_score[i].detach().numpy():
-            selected.append(i)
-    selected_edge_index = [True for _ in range(num_edge)]
-    selected_edge_index_af = [edge_index[i] and selected_edge_index[i]  for i in range(num_edge)]
+    # sample_r = [np.random.rand(1) for _ in range(num_can)]
+    # selected = []
+    # for i in range(num_can):
+    #     if sample_r[i].data < select_score[i].detach().numpy():
+    #         selected.append(i)
+    selected = sample_policy(num_can,select_score)
+
+    order,edge_rlt_index = return_order_prob(rlt,selected)
+    # selected_edge_index = [True for _ in range(num_edge)]
+    # selected_edge_index_af = [edge_index[i] and selected_edge_index[i]  for i in range(num_edge)]
     # for i in range(2):
     #     for j in range(num_edge):
     #         if c_t_c[i][j].detach().numpy() not in selected:
@@ -277,10 +303,12 @@ def get_log_prob(rlt):
     #     edge_list.append((selected_edge[0][i],selected_edge[1][i]))
     # DG = nx.DiGraph(edge_list)
     # sorted = list(nx.topological_sort(DG))
-    np.random.shuffle(selected)
+    # np.random.shuffle(selected)
     for ele in selected:
-        log_prob += select_score[ele]
-    return selected, log_prob
+        log_prob += torch.log(select_score[ele])
+    for ele in edge_rlt_index:
+        log_prob += torch.log(link_pred[ele])
+    return order, log_prob
 
 
 
@@ -315,6 +343,7 @@ def get_batch_reward_loss_new(output, cand_pids, pid_batch, option_batch, unit_b
 
         batch_reward += _reward
         batch_loss -= _reward * log_prob
+        cids = []
 
     return cids, batch_reward, batch_loss
 
@@ -396,63 +425,63 @@ def policy_gradient_train_new(device,problems, train_pids, cand_pids, cand_examp
             reward_history.append(reward)
             loss_history.append(loss.item())
 
-            if np.isnan(loss.item()):
-                STOP_FLAG = True
-                break
-
-        # for each epoch
-        total_reward_history.append(total_train_reward)
-        total_loss_history.append(total_train_loss)
-
-        best_reward = max(total_reward_history)
-        best_loss = min(total_loss_history)
-
-        best_reward_epoch = total_reward_history.index(best_reward)
-        best_loss_epoch = total_loss_history.index(best_loss)
-
-        logger.write("============================================")
-        logger.write(f"### Epoch: {epoch} / {args.epochs}")
-        logger.write(f"### Total reward: {total_train_reward}, " + f"Total loss: {round(total_train_loss,5)}, " +
-                     f"Best reward: {best_reward} at epoch {best_reward_epoch}, " +
-                     f"Best loss: {round(best_loss, 5)} at epoch {best_loss_epoch}\n")
-
-        # save every epoch
-        ckpt_file = os.path.join(args.ckpt_path, f"ckpt_{epoch}.pt")
-        torch.save(policy_model.linear.state_dict(), ckpt_file)
-        logger.write(f"saved the ckpt to {ckpt_file}")
-
-        # save best epoch
-        if epoch == best_reward_epoch:
-            ckpt_file = os.path.join(args.ckpt_path, "ckpt_best_reward.pt")
-            torch.save(policy_model.linear.state_dict(), ckpt_file)
-            logger.write(f"saved the best reward ckpt to {ckpt_file}")
-
-        if epoch == best_loss_epoch:
-            ckpt_file = os.path.join(args.ckpt_path, "ckpt_best_loss.pt")
-            torch.save(policy_model.linear.state_dict(), ckpt_file)
-            logger.write(f"saved the best loss ckpt to {ckpt_file}")
-
-        # save reward and loss history
-        history = {
-            "reward_history": reward_history,
-            "loss_history": loss_history,
-            "total_reward_history": total_reward_history,
-            "total_loss_history": total_loss_history,
-        }
-        history_file = os.path.join(args.ckpt_path, "history.json")
-        with open(history_file, 'w') as f:
-            json.dump(history, f, indent=2, separators=(',', ': '))
-
-        # print cache info
-        logger.write(call_gpt3.cache_info())
-        logger.write("============================================\n")
-
-        if STOP_FLAG:
-            break
-
-    # save in the end
-    ckpt_file = os.path.join(args.ckpt_path, "ckpt_final.pt")
-    torch.save(policy_model.linear.state_dict(), ckpt_file)
+    #         if np.isnan(loss.item()):
+    #             STOP_FLAG = True
+    #             break
+    #
+    #     # for each epoch
+    #     total_reward_history.append(total_train_reward)
+    #     total_loss_history.append(total_train_loss)
+    #
+    #     best_reward = max(total_reward_history)
+    #     best_loss = min(total_loss_history)
+    #
+    #     best_reward_epoch = total_reward_history.index(best_reward)
+    #     best_loss_epoch = total_loss_history.index(best_loss)
+    #
+    #     logger.write("============================================")
+    #     logger.write(f"### Epoch: {epoch} / {args.epochs}")
+    #     logger.write(f"### Total reward: {total_train_reward}, " + f"Total loss: {round(total_train_loss,5)}, " +
+    #                  f"Best reward: {best_reward} at epoch {best_reward_epoch}, " +
+    #                  f"Best loss: {round(best_loss, 5)} at epoch {best_loss_epoch}\n")
+    #
+    #     # save every epoch
+    #     ckpt_file = os.path.join(args.ckpt_path, f"ckpt_{epoch}.pt")
+    #     torch.save(policy_model.linear.state_dict(), ckpt_file)
+    #     logger.write(f"saved the ckpt to {ckpt_file}")
+    #
+    #     # save best epoch
+    #     if epoch == best_reward_epoch:
+    #         ckpt_file = os.path.join(args.ckpt_path, "ckpt_best_reward.pt")
+    #         torch.save(policy_model.linear.state_dict(), ckpt_file)
+    #         logger.write(f"saved the best reward ckpt to {ckpt_file}")
+    #
+    #     if epoch == best_loss_epoch:
+    #         ckpt_file = os.path.join(args.ckpt_path, "ckpt_best_loss.pt")
+    #         torch.save(policy_model.linear.state_dict(), ckpt_file)
+    #         logger.write(f"saved the best loss ckpt to {ckpt_file}")
+    #
+    #     # save reward and loss history
+    #     history = {
+    #         "reward_history": reward_history,
+    #         "loss_history": loss_history,
+    #         "total_reward_history": total_reward_history,
+    #         "total_loss_history": total_loss_history,
+    #     }
+    #     history_file = os.path.join(args.ckpt_path, "history.json")
+    #     with open(history_file, 'w') as f:
+    #         json.dump(history, f, indent=2, separators=(',', ': '))
+    #
+    #     # print cache info
+    #     logger.write(call_gpt3.cache_info())
+    #     logger.write("============================================\n")
+    #
+    #     if STOP_FLAG:
+    #         break
+    #
+    # # save in the end
+    # ckpt_file = os.path.join(args.ckpt_path, "ckpt_final.pt")
+    # torch.save(policy_model.linear.state_dict(), ckpt_file)
 
 def parse_args():
     parser = argparse.ArgumentParser()
