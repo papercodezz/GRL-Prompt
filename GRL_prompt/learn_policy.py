@@ -31,7 +31,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def load_data(args):
     # problems = json.load(open("/data/PromptPG-main/data/dolly_train_data.json"))
-    problems = json.load(open("/data/PromptPG-main/data/dolly_train_data.json"))
+    problems = json.load(open("/data/PromptPG-main/data/alpaca_train_data.json"))
     pids = list(problems.keys())
 
     samples = random.sample(pids, args.train_number + args.cand_number)  # random sample
