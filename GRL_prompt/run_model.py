@@ -31,10 +31,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def load_data(args):
-    # problems_train = json.load(open("/data/PromptPG-main/data/alpaca_train_data.json"))
-    # problems_test = json.load(open("/data/PromptPG-main/data/alpaca_test_data.json"))
-    problems_train = json.load(open("/data/PromptPG-main/data/dolly_train_data.json"))
-    problems_test = json.load(open("/data/PromptPG-main/data/dolly_test_data.json"))
+    problems_train = json.load(open("/data/PromptPG-main/data/alpaca_train_data.json"))
+    problems_test = json.load(open("/data/PromptPG-main/data/alpaca_test_data.json"))
+    # problems_train = json.load(open("/data/PromptPG-main/data/dolly_train_data.json"))
+    # problems_test = json.load(open("/data/PromptPG-main/data/dolly_test_data.json"))
     problems = {**problems_test, **problems_train}
 
     # test problem ids
