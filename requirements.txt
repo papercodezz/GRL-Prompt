@@ -1,5 +1,0 @@
-huggingface-hub
-numpy==1.23.2
-openai==0.23.0
-pandas==1.4.3
-transformers
