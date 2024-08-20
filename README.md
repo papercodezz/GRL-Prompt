@@ -46,7 +46,7 @@ To use LLaMA, change --model to llama
 
 Here, the vllm service is used to provide the LLaMA inference interface. Therefore, before using LLaMA, the vllm service must be started first. The startup steps are as follows:
 ```
-1. Open a tmux Window，tmux a -t clash
+1. Open a tmux Window：tmux a -t clash
 2. Execute Command：CUDA_VISIBLE_DEVICES=0  python -m vllm.entrypoints.openai.api_server --model /data/model/llama --gpu-memory-utilization 0.7  --port 9201 --served-model-name llama
 ```
 After completing the training or inference task, press Control+C in the tmux window to stop the service to avoid occupying GPU resources.
