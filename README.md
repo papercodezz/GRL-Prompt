@@ -71,5 +71,5 @@ python run_model.py \
 --ckpt exp1/ \
 --gpu 0
 ```
-
+test_number being -1 means that all examples from the test set will be used.
 Switch Models as Above
