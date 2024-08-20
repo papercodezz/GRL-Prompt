@@ -6,11 +6,11 @@ bert-base-uncased: /data/model/bert-base-uncased
 llama-2-7b-hf: /data/model/Llama-2-7b-hf
 
 data address:
-dolly: 
+dolly:   
         /data/dolly-all.json （Full Data）  
         /data/dolly-all.json （Training Data）  
         /data/dolly-all.json （Test Data）  
-alpaca：
+alpaca：  
         /data/alpaca-all.json（Full Data）  
         /data/alpaca-train.json（Training Data）  
         /data/alpaca-test.json（Test Data）  
