@@ -69,7 +69,7 @@ def call_gpt4(prompt, temperature, max_tokens, top_p, frequency_penalty, presenc
                                                 top_p=top_p,
                                                 frequency_penalty=frequency_penalty,
                                                 presence_penalty=presence_penalty,
-                                                stop=["OO"],
+                                                stop=["\n"],
                                                 logprobs=True,
                                                 )
             output = response["choices"][0]["message"]['content'].strip()
@@ -100,7 +100,7 @@ def call_llama(prompt, temperature, max_tokens, top_p, frequency_penalty, presen
         "max_tokens": max_tokens,
         "frequency_penalty":frequency_penalty,
         "presence_penalty":presence_penalty,
-        "stop":["OO"],
+        "stop":["\n"],
         "logprobs": True
     }
     try:
@@ -130,7 +130,7 @@ def call_gpt3(prompt, temperature, max_tokens, top_p, frequency_penalty, presenc
                                                 top_p=top_p,
                                                 frequency_penalty=frequency_penalty,
                                                 presence_penalty=presence_penalty,
-                                                stop=["OO"],
+                                                stop=["\n"],
                                                 logprobs=True,
                                                 )
             output = response["choices"][0]["message"]['content'].strip()
