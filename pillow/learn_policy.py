@@ -18,7 +18,7 @@ import torch.nn as nn
 from functools import lru_cache
 from tools import utils
 from base_prompt import *
-from utilities import extract_prediction, normalize_answer
+
 
 from pillow import Pillow
 from collections import defaultdict
