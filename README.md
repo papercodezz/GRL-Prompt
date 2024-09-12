@@ -7,6 +7,7 @@ llama-2-7b-hf: /data/model/Llama-2-7b-hf
 
 data download url
 alpaca: https://huggingface.co/datasets/tatsu-lab/alpaca
+
 dolly: https://huggingface.co/datasets/databricks/databricks-dolly-15k
 
 data process
