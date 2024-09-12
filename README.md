@@ -13,7 +13,10 @@ alpaca: https://huggingface.co/datasets/tatsu-lab/alpaca
 dolly: https://huggingface.co/datasets/databricks/databricks-dolly-15k
 
 data process
+
+'''
 python ./data/test.py
+'''
 
 data address:  
 dolly:   
