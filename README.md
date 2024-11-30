@@ -1,4 +1,4 @@
-# COLING 2025
+# GRL-Prompt
 ### Model and data address
 The address of the model used：
 
